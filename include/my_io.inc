@@ -1,0 +1,14 @@
+; my_io.asm
+extern io_open
+extern io_open_read_only
+extern io_open_append
+extern io_open_create
+extern io_open_dir
+extern io_close
+extern io_write
+extern io_read
+extern io_exit
+extern get_str_len
+extern print
+extern print_nl
+extern highlight

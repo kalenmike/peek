@@ -1,0 +1,25 @@
+# --- Build Artifacts ---
+# Ignore the entire bin and build directories
+bin/
+build/
+
+# Ignore any object files if they end up in the root
+*.o
+*.obj
+
+# Ignore the final executable if it's in the root
+pk
+
+# --- Debug & OS Garbage ---
+# GDB history and core dumps
+.gdb_history
+core
+vgcore.*
+
+# macOS hidden files
+.DS_Store
+
+# --- Editor Specific ---
+# Vim swap files
+*.swp
+*~
