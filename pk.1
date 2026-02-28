@@ -1,0 +1,29 @@
+.TH PK 1 "2026-02-28" "1.0" "pk User Manual"
+.SH NAME
+pk \- a minimalist, high-performance assembly directory browser
+.SH SYNOPSIS
+.B pk
+[\fIPATH\fR]
+.SH DESCRIPTION
+.B pk
+is a zero-dependency utility written in x86_64 assembly. It lists directory 
+contents by communicating directly with the Linux kernel via the getdents64 
+system call.
+.PP
+It is designed to be orders of magnitude smaller than the standard GNU ls.
+.SH OPTIONS
+Currently, pk accepts a single optional argument:
+.TP
+.I PATH
+The directory to list. If omitted, pk defaults to the current directory (.).
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+General error (e.g., directory not found or permission denied).
+.SH AUTHOR
+Written by Kalen Michael.
+.SH REPORTING BUGS
+Report bugs at https://github.com/kalenmike/peek.
