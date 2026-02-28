@@ -133,13 +133,29 @@ ready:
     ; print .
     mov rsi, dot
     mov rdx, 1
+    call highlight
+    ; TODO: DRY
+    push rax
+    push '/'
+    mov rsi, rsp
+    mov rdx, 1
     call print
+    pop rax
+    pop rax
     call print_nl
 
     ; print ..
     mov rsi, dotdot
     mov rdx, 2
+    call highlight
+    ; DRY
+    push rax
+    push '/'
+    mov rsi, rsp
+    mov rdx, 1
     call print
+    pop rax
+    pop rax
     call print_nl
 
 .read_dir_loop:
