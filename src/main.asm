@@ -1,5 +1,5 @@
 ; pk - An Assembly Project
-; Copyright (c) 2026 Jet
+; Copyright (c) 2026 Kalen Michael
 ; Licensed under the MIT License (see LICENSE for details)
 
 %include "include/syscalls.inc"
