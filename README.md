@@ -24,7 +24,7 @@ Unlike standard system utilities that rely on the GNU C Library (glibc), `pk` co
 **Peek** is invoked via the `pk` command. It bypasses standard library abstractions to interface directly with the Linux VFS (Virtual File System).
 
 ```bash
-pk [DIRECTIVE] [PATH]
+$ pk [DIRECTIVE] [PATH]
 
 ```
 
@@ -84,20 +84,24 @@ This project serves as a deep dive into the Linux ABI, manual memory management,
 ## How to Compile
 
 ```bash
-make
-make install
+make # Build the binary
+sudo make install # Install to path
 ```
 
 **All `make` commands:**
 
 ```bash
-make # assembles,links, and strips all code
-make clean # deletes binary and object files for a fresh build
-make -n # dry run, outputs commands without running them
-make clean && make debug # build with debug signals
-make install # Install to /usr/local/bin
-make install PREFIX=$HOME/.local # Install to custom location
-make uninstall # delete bin
+$ make # assembles,links, and strips all code
+$ make -n # dry run, outputs commands without running them
+
+$ make clean # deletes binary and object files for a fresh build
+
+$ make debug # build with debug signals
+
+$ make install # Install to /usr/local
+$ make install PREFIX=$HOME/.local # Install to custom location
+
+$ make uninstall # Uninstall binary and man files
 ```
 
 
@@ -125,7 +129,7 @@ $ pk # Peek current location
 
 $ pk ~ # Peek by Argument
 
-$ echo "/home" | pk # Coming soon
+$ echo "/home" | pk # Pipe directory in
 ```
 
 ### Example

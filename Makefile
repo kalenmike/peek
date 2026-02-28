@@ -19,7 +19,7 @@ BUILD_DIR = build
 BIN_DIR = bin
 PREFIX = /usr/local
 INSTALL_DIR = $(PREFIX)/bin
-MAN_DIR = $PREFIX/share/man/man1
+MAN_DIR = $(PREFIX)/share/man/man1
 
 # Files
 SRCS = $(wildcard $(SRC_DIR)/*.asm)
@@ -55,13 +55,13 @@ $(BIN)_debug: $(OBJS)
 install: $(BIN)
 	@echo "Installing $(BIN) to $(INSTALL_DIR)..."
 	@mkdir -p $(INSTALL_DIR)
-	@install -m 755 $(BIN) $(INSTALL_DIR)/$(BIN)
+	@install -m 755 $(BIN) $(INSTALL_DIR)/$(TARGET)
 	@install -m 644 pk.1 $(MAN_DIR)/pk.1
-	@echo "Done! You can now run '$(BIN)' from anywhere."
+	@echo "Done! You can now run '$(TARGET)' from anywhere."
 
 uninstall:
-	@echo "Removing $(BIN) from $(INSTALL_DIR)..."
-	@rm -f $(INSTALL_DIR)/$(BIN)
+	@echo "Removing $(TARGET) from $(INSTALL_DIR)..."
+	@rm -f $(INSTALL_DIR)/$(TARGET)
 	@rm -f $(MAN_DIR)/pk.1
 	@echo "Uninstall complete."
 
