@@ -1,6 +1,9 @@
+# Get the current date in YYYY-MM-DD format
+BUILD_DATE = $(shell date +%Y-%m-%d)
+
 # Variables
 AS = nasm
-ASFLAGS = -f elf64
+ASFLAGS = -f elf64 -DBUILD_DATE="\"$(BUILD_DATE)\""
 LD = ld
 LDFLAGS = -n -N --strip-all
 STRIP = strip
@@ -16,6 +19,7 @@ BUILD_DIR = build
 BIN_DIR = bin
 PREFIX = /usr/local
 INSTALL_DIR = $(PREFIX)/bin
+MAN_DIR = $PREFIX/share/man/man1
 
 # Files
 SRCS = $(wildcard $(SRC_DIR)/*.asm)
@@ -52,11 +56,13 @@ install: $(BIN)
 	@echo "Installing $(BIN) to $(INSTALL_DIR)..."
 	@mkdir -p $(INSTALL_DIR)
 	@install -m 755 $(BIN) $(INSTALL_DIR)/$(BIN)
+	@install -m 644 pk.1 $(MAN_DIR)/pk.1
 	@echo "Done! You can now run '$(BIN)' from anywhere."
 
 uninstall:
 	@echo "Removing $(BIN) from $(INSTALL_DIR)..."
 	@rm -f $(INSTALL_DIR)/$(BIN)
+	@rm -f $(MAN_DIR)/pk.1
 	@echo "Uninstall complete."
 
 # Clean up
