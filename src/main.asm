@@ -7,6 +7,7 @@
 
 section .bss
     dir_buffer resb 4096    ; 4KB buffer for filenames
+    pipe_buffer resb 4096
 
 section .rodata
     flag_jump_table:
@@ -60,7 +61,7 @@ section .text
 _start:
     mov rax, [rsp]
     cmp rax, 1
-    je use_default         ; no args
+    je check_pipe         ; no args
 
     ; retrieve the first argument
     mov rsi, [rsp + 16]     ; rsi = argv[1]
@@ -102,13 +103,25 @@ run_pk:
     test rsi, rsi           ; check if argument pointer is null
 
     ; save argument to r12
-    jz use_default
+    jz check_pipe
     mov r12, rsi
+    jmp ready
+
+check_pipe:
+    call is_pipe
+    test rax, rax
+    jz use_default
+
+    call read_from_pipe
+    test rax, rax
+    jz use_default
+    mov r12, rax
     jmp ready
 
 use_default:
     mov r12, dot
-    
+    jmp ready
+
 ready:
     ; save the str_len to r13
     mov rdi, r12
@@ -295,3 +308,67 @@ strcmp:
     pop rdi
     pop rsi
     ret
+
+; --- Check if STDIN is a Pipe or Redirection ---
+; Returns: RAX = 1 (Yes), 0 (No)
+is_pipe:
+    sub rsp, 144
+    mov rax, SYS_FSTAT
+    mov rdi, 0
+    mov rsi, rsp
+    syscall
+
+    mov eax, [rsp + 24] ; Load st_mode (offset 24, 4 bytes/dword)
+    add rsp, 144        ; Clean up stack
+
+    ; Check if its pipe data
+    and eax, 0xF000     ; Mask the file type bits
+    cmp eax, 0x1000     ; Compare with S_IFIFO
+    je .true
+    
+    ; Check if its a file pk < path.txt
+    cmp eax, 0x8000
+    je .true
+    
+.false:
+    xor rax, rax
+    ret
+
+.true:
+    mov rax, 1
+    ret
+
+; ---------------------------------------------------------
+; read_from_pipe
+; Returns: RAX = pointer to null-terminated string, or 0 on error
+; ---------------------------------------------------------
+read_from_pipe:
+    mov rdi, STDIN
+    mov rsi, pipe_buffer
+    mov rdx, 4096
+    call io_read
+
+    test rax, rax
+    jle .error_read
+
+    lea rdi, [pipe_buffer]
+    add rdi, rax
+    dec rdi
+
+    cmp byte [rdi], 0xA     ; Is it new line?
+    jne .null_term
+    mov byte [rdi], 0
+    jmp .done
+
+.null_term:
+    mov byte [rdi+1], 0
+
+.done:
+    mov rax, pipe_buffer
+    ret
+
+.error_read:
+    xor rax, rax
+    ret
+
+
