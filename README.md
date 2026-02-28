@@ -1,16 +1,47 @@
-# PEEK - An Assembly Project
+# Peek (pk)
 
-> A Zero-Dependency Linux Directory Browser in **x86_64** Assembly
+<div align="center">
+![Development](https://img.shields.io/badge/status-in--development-orange)
+![Language](https://img.shields.io/badge/language-x86__64%20ASM-red)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Size](https://img.shields.io/badge/binary--size-<1KB-blue)
+</div>
 
-`pk` is a high-performance, minimalist implementation of the core Linux ls utility, written entirely in **x86_64** Assembly (NASM). Unlike standard system utilities that rely on the GNU C Library (glibc), `pk` communicates directly with the Linux kernel using the syscall interface.
+**Peek** is a minimalist, high-performance directory browser written in pure x86_64 Assembly for Linux.
 
-> pk is 99% smaller than ls
+Unlike standard system utilities that rely on the GNU C Library (glibc), `pk` communicates directly with the Linux kernel using the syscall interface.
 
-|BIN|SIZE|
-|-|-|
-|ls|~140kb|
-|pk|~1.2kb|
 
+| Feature | GNU `ls` | **Peek** `pk` - 99% Smaller |
+| --- | --- | --- |
+| **Language** | C (High Level) | x86_64 Assembly |
+| **Dependencies** | `libc`, `libpcre2`, `libselinux`... | **None** (Pure Syscalls) |
+| **Binary Size** | ~140 KB | **< 1 KB** |
+| **Complexity** | 100k+ lines of code | A few hundred instructions |
+
+Since you're going for that "Mechanical Watch" / "Digital Scalpel" vibe, your documentation should reflect precision. Instead of just listing flags, you can document them as **"Directives"** or **"Instruction Modifiers."**
+
+Here is a template to add to your `README.md` that keeps the "Engineering Excellence" aesthetic while clearly explaining the new Jump Table-powered flags.
+
+---
+
+## 🛠 Usage & Directives
+
+**Peek** is invoked via the `pk` command. It bypasses standard library abstractions to interface directly with the Linux VFS (Virtual File System).
+
+```bash
+pk [DIRECTIVE] [PATH]
+
+```
+
+### Flags
+
+| Directive | Long Form | Action |
+| --- | --- | --- |
+| `-h` | `--help` | **Manual** Shows the help buffer.|
+| `-v` | `--version` | **Telemetry:** Displays the build version, architecture, and author metadata. |
+
+---
 
 ## Project Summary
 
@@ -24,7 +55,7 @@ This project serves as a deep dive into the Linux ABI, manual memory management,
 
 **Minimal Footprint**: A fully functional, stripped executable under 5KB.
 
-### Main Features
+## Main Features
 
 #### Core Functionality
 - [X] Direct Syscall Implementation: Use sys_open, sys_getdents64, sys_write, and sys_exit without external headers.
@@ -56,8 +87,14 @@ This project serves as a deep dive into the Linux ABI, manual memory management,
 ```
 
 
-## To build
+## How to Compile
 
+```bash
+make
+make install
+```
+
+**All `make` commands:**
 
 ```bash
 make # assembles,links, and strips all code
@@ -120,4 +157,3 @@ Standard `ls` is dynamically linked to `libc.so`. When you run it, the Linux loa
 3. **Register-Based**: We use the System V ABI to pass arguments directly in registers (`rdi`, `rsi`, `rdx`), resulting in zero stack-frame overhead for core I/O.
 
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
