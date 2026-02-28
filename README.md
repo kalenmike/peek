@@ -1,11 +1,9 @@
 # Peek (pk)
 
-<div align="center">
 ![Development](https://img.shields.io/badge/status-in--development-orange)
 ![Language](https://img.shields.io/badge/language-x86__64%20ASM-red)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Size](https://img.shields.io/badge/binary--size-<1KB-blue)
-</div>
 
 **Peek** is a minimalist, high-performance directory browser written in pure x86_64 Assembly for Linux.
 
