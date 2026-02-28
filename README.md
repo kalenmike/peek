@@ -17,10 +17,6 @@ Unlike standard system utilities that rely on the GNU C Library (glibc), `pk` co
 | **Binary Size** | ~140 KB | **< 1 KB** |
 | **Complexity** | 100k+ lines of code | A few hundred instructions |
 
-Since you're going for that "Mechanical Watch" / "Digital Scalpel" vibe, your documentation should reflect precision. Instead of just listing flags, you can document them as **"Directives"** or **"Instruction Modifiers."**
-
-Here is a template to add to your `README.md` that keeps the "Engineering Excellence" aesthetic while clearly explaining the new Jump Table-powered flags.
-
 ---
 
 ## 🛠 Usage & Directives
