@@ -7,6 +7,7 @@
 
 section .bss
     dir_buffer resb 4096    ; 4KB buffer for filenames
+    b_filename resb 2048
     pipe_buffer resb 4096
 
 section .rodata
@@ -194,7 +195,7 @@ ready:
     test rax, rax                  ; Is it zero?
     jz .goto_next                  ; If 0, this entry is empty/garbage, skip it
 
-    lea rdi, [dir_buffer + r15 + 19]    ; get the start of the filename
+    lea rdi, [dir_buffer + r15 + 19]    ; get the start of the filename -- TODO: this is 32 bit convert to 64 bit
 
     ; print if first char is not .
     mov al, [rdi]
@@ -219,23 +220,37 @@ ready:
     jne .print_file
 
 .print_directory:
-    push rdi
-    ; TODO: DRY the get_str_len
+    ; --- Clear Workspace ---
+    push r12
+    push r13
+    
+    ; --- Get Length ---
+    mov r12, rdi        ; raw filename
     call get_str_len
-    mov rdx, rax
-    pop rsi
-    call highlight
+    mov rdx, rax        ; length of filename
 
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
+
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
+    mov rsi, r12
+    call format_highlight
+    mov rdi, rax
+
+    ; --- Append Slash and Newline ---
+    mov word [rdi], 0x0A2F    ; Writes '/' and '\n'
+    add rdi, 2                ; Advance cursor 2 bytes
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
     call print
-    pop rax
-    pop rax
-
-    ; TODO: DRY the print_nl
-    call print_nl
+    
+    ; --- Restore Workspace ---
+    pop r13
+    pop r12
 
     jmp .goto_next
 

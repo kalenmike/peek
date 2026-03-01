@@ -2,6 +2,7 @@
 # Ignore the entire bin and build directories
 bin/
 build/
+benchmarks/
 
 # Ignore any object files if they end up in the root
 *.o
