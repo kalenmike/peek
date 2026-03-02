@@ -4,6 +4,7 @@
 
 %include "include/syscalls.inc"
 %include "include/my_io.inc"
+%include "include/macros.inc"
 
 section .bss
     dir_buffer resb 4096    ; 4KB buffer for filenames
@@ -152,7 +153,7 @@ ready:
     mov rdi, rax
 
     ; --- Append Slash and Newline ---
-    call append_slash_nl
+    append_slash_nl
     
     ; --- Print ---
     mov rsi, r13
@@ -171,7 +172,7 @@ ready:
     mov rdi, rax
 
     ; --- Append Slash and Newline ---
-    call append_slash_nl
+    append_slash_nl
     
     ; --- Print ---
     mov rsi, r13
@@ -248,7 +249,7 @@ ready:
     mov rdi, rax
 
     ; --- Append Slash and Newline ---
-    call append_slash_nl
+    append_slash_nl
     
     ; --- Print ---
     mov rsi, r13
@@ -441,24 +442,6 @@ safe_append:
 .cleanup:
     pop rbx
     pop rcx
-    ret
-
-append_slash:
-    ; --- Append Slash and Newline ---
-    mov byte [rdi], 0x2F    ; Writes '/' and '\n'
-    inc rdi
-    ret
-
-append_nl:
-    ; --- Append Slash and Newline ---
-    mov byte [rdi], 0xA    ; Writes '/' and '\n'
-    inc rdi
-    ret
-
-append_slash_nl:
-    ; --- Append Slash and Newline ---
-    mov word [rdi], 0x0A2F    ; Writes '/' and '\n'
-    add rdi, 2                ; Advance cursor 2 bytes
     ret
 
 ;format_highlight:
