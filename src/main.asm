@@ -41,7 +41,7 @@ section .rodata
     ; Version Message
     version_msg:
         db "Peek (pk) version v"
-        db "0.1.0-dev"
+        db "0.1.1-dev"
         db " (x86_64 linux)", 10
         db "Built: ", BUILD_DATE, 10
         db "Author: Kalen Michael", 10
