@@ -219,7 +219,7 @@ ready:
 
     ; skip if ..
     cmp al, '.'
-    jne .print_file
+    jne .directory_check
     mov al, [rdi + 2]
     cmp al, 0
     je .goto_next
