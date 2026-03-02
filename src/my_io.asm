@@ -1,4 +1,4 @@
-%include "include/syscalls.inc"
+%include "include/constants.inc"
 
 section .data
     nl db 0xA
