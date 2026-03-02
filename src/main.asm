@@ -8,6 +8,7 @@
 section .bss
     dir_buffer resb 4096    ; 4KB buffer for filenames
     b_filename resb 2048
+    b_output resb 4096      ; Print buffer
     pipe_buffer resb 4096
 
 section .rodata
@@ -129,12 +130,6 @@ ready:
     call get_str_len        ; input: rdi, output: rax
     mov r13, rax
 
-    ; optionally print the directory we are checking
-    ; mov rsi, r12
-    ; mov rdx, r13
-    ; call print
-    ; call print_nl
-
     ; open directory
     mov rdi, r12
     call io_open_dir
@@ -144,33 +139,47 @@ ready:
 
     mov r13, rax
 
-    ; print .
+    push r13
+
+    ; --- Print '.' ---
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
     mov rsi, dot
     mov rdx, 1
-    call highlight
-    ; TODO: DRY
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
-    call print
-    pop rax
-    pop rax
-    call print_nl
+    call format_highlight
+    mov rdi, rax
 
-    ; print ..
+    ; --- Append Slash and Newline ---
+    call append_slash_nl
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
+    call print
+
+    ; --- Print '..' ---
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
     mov rsi, dotdot
     mov rdx, 2
-    call highlight
-    ; DRY
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
+    call format_highlight
+    mov rdi, rax
+
+    ; --- Append Slash and Newline ---
+    call append_slash_nl
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
     call print
-    pop rax
-    pop rax
-    call print_nl
+
+    pop r13
 
 .read_dir_loop:
     mov rax, SYS_GETDENTS
@@ -239,8 +248,7 @@ ready:
     mov rdi, rax
 
     ; --- Append Slash and Newline ---
-    mov word [rdi], 0x0A2F    ; Writes '/' and '\n'
-    add rdi, 2                ; Advance cursor 2 bytes
+    call append_slash_nl
     
     ; --- Print ---
     mov rsi, r13
@@ -386,4 +394,81 @@ read_from_pipe:
     xor rax, rax
     ret
 
+; ---------------------------------------------------------
+; safe_append
+; Input:  rsi = source string
+;         rdx = length to copy
+; Global: r14 = Current Tail, r15 = Buffer Start
+; ---------------------------------------------------------
+safe_append:
+    push rbx
+    push rcx
+
+    ; --- Does the string fit ---
+    ; subtract start from tail to get length
+    ; length = tail - start
+    mov rbx, r14
+    sub rbx, r15
+
+    mov rax, rbx
+    add rax, rdx
+    cmp rax, 2048    ; hard limit for this buffer
+    jb .do_copy
+
+    ; --- Flush ---
+    push rsi
+    push rdx
+    mov rsi, r15
+    mov rdx, rbx
+    call print
+    pop rdx
+    pop rsi
+
+    mov r14, r15
+
+    cmp rdx, 2048   ; hard limit, long filename
+    jbe .do_copy
+
+.truncate:
+    mov rdx, 2048   ; cap for now. TODO: split in middle
+
+.do_copy:
+    mov rdi, r14    ; set data as current tail
+    mov rcx, rdx    ; sets rcx as length for loop
+    rep movsb       ; copy data to rsi, increment tail
+    mov r14, rdi    ; save new tail
+
+.cleanup:
+    pop rbx
+    pop rcx
+    ret
+
+append_slash:
+    ; --- Append Slash and Newline ---
+    mov byte [rdi], 0x2F    ; Writes '/' and '\n'
+    inc rdi
+    ret
+
+append_nl:
+    ; --- Append Slash and Newline ---
+    mov byte [rdi], 0xA    ; Writes '/' and '\n'
+    inc rdi
+    ret
+
+append_slash_nl:
+    ; --- Append Slash and Newline ---
+    mov word [rdi], 0x0A2F    ; Writes '/' and '\n'
+    add rdi, 2                ; Advance cursor 2 bytes
+    ret
+
+;format_highlight:
+    ; Add Red
+
+    ; Add Filename
+
+    ; Add Reset
+
+    ; Add Slash
+
+    ; Add Newline
 
