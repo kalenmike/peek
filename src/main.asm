@@ -1,12 +1,15 @@
 ; pk - An Assembly Project
-; Copyright (c) 2026 Jet
+; Copyright (c) 2026 Kalen Michael
 ; Licensed under the MIT License (see LICENSE for details)
 
-%include "include/syscalls.inc"
+%include "include/constants.inc"
 %include "include/my_io.inc"
+%include "include/macros.inc"
 
 section .bss
     dir_buffer resb 4096    ; 4KB buffer for filenames
+    b_filename resb 2048
+    b_output resb 4096      ; Print buffer
     pipe_buffer resb 4096
 
 section .rodata
@@ -119,21 +122,10 @@ check_pipe:
     jmp ready
 
 use_default:
-    mov r12, dot
+    lea r12, [rel dot]
     jmp ready
 
 ready:
-    ; save the str_len to r13
-    mov rdi, r12
-    call get_str_len        ; input: rdi, output: rax
-    mov r13, rax
-
-    ; optionally print the directory we are checking
-    ; mov rsi, r12
-    ; mov rdx, r13
-    ; call print
-    ; call print_nl
-
     ; open directory
     mov rdi, r12
     call io_open_dir
@@ -141,39 +133,54 @@ ready:
     cmp rax, 0
     jl error_open
 
-    mov r13, rax
+    mov r12, rax    ; save FD
 
-    ; print .
+    ; --- Print '.' ---
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
     mov rsi, dot
     mov rdx, 1
-    call highlight
-    ; TODO: DRY
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
-    call print
-    pop rax
-    pop rax
-    call print_nl
+    call format_highlight
+    mov rdi, rax
 
-    ; print ..
+    ; --- Append Slash and Newline ---
+    append_slash_nl
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
+    call print
+
+    ; --- Print '..' ---
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
     mov rsi, dotdot
     mov rdx, 2
-    call highlight
-    ; DRY
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
+    call format_highlight
+    mov rdi, rax
+
+    ; --- Append Slash and Newline ---
+    append_slash_nl
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
     call print
-    pop rax
-    pop rax
-    call print_nl
+
+    ; --- Prepare print buffer ---
+    lea r15, [rel b_output]
 
 .read_dir_loop:
+    ; r12 - FD
+    ; r13 - Bytes written to dir_buffer
     mov rax, SYS_GETDENTS
-    mov rdi, r13
+    mov rdi, r12
     mov rsi, dir_buffer
     mov rdx, 4096
     syscall
@@ -182,19 +189,23 @@ ready:
     je close_and_exit   ; read done
     jl error_read       ; read error
 
-    mov r14, rax
-    xor r15, r15
+    mov r13, rax
+    xor r14, r14
 
 .parse_buffer:
-    cmp r15, r14
+    ; r14 - Pointer in dir buffer
+    cmp r14, r13
     jae .read_dir_loop  ; jump if above or equal
 
     ; --- Safety Check: Is Inode 0? ---
-    mov rax, [dir_buffer + r15]    ; d_ino is the first 8 bytes
+    mov rax, [dir_buffer + r14]    ; d_ino is the first 8 bytes
     test rax, rax                  ; Is it zero?
     jz .goto_next                  ; If 0, this entry is empty/garbage, skip it
 
-    lea rdi, [dir_buffer + r15 + 19]    ; get the start of the filename
+    ; --- Get Filename Address ---
+    lea rdi, [rel dir_buffer]
+    add rdi, r14
+    add rdi, D_NAME
 
     ; print if first char is not .
     mov al, [rdi]
@@ -214,52 +225,96 @@ ready:
     je .goto_next
 
 .directory_check:
-    mov al, [dir_buffer + r15 + 18]
-    cmp al, 4
+    ; --- Get File Type ---
+    movzx rbx, byte [rel dir_buffer + r14 + D_TYPE]
+    mov al, [dir_buffer + r14 + D_TYPE]
+    cmp rbx, DT_DIR
     jne .print_file
 
 .print_directory:
-    push rdi
-    ; TODO: DRY the get_str_len
+    ; --- Clear Workspace ---
+    push r12
+    push r13
+    
+    ; --- Get Length ---
+    mov r12, rdi        ; raw filename
     call get_str_len
-    mov rdx, rax
-    pop rsi
-    call highlight
+    mov rdx, rax        ; length of filename
 
-    push rax
-    push '/'
-    mov rsi, rsp
-    mov rdx, 1
-    call print
-    pop rax
-    pop rax
 
-    ; TODO: DRY the print_nl
-    call print_nl
+    lea rdi, [rel b_filename]   ; PIE-compliant
+    mov r13, rdi                ; start of buffer
+
+    ; --- Format ---
+    mov rsi, r12
+    call format_highlight
+    mov rdi, rax
+
+    ; --- Append Slash and Newline ---
+    append_slash_nl
+    
+    ; --- Print ---
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13;
+    call safe_append
+    
+    ; --- Restore Workspace ---
+    pop r13
+    pop r12
 
     jmp .goto_next
 
 .print_file:
+    push r13
+    ; rdi - start of Filename
+
+    ; --- Print % ---
     push rdi
     call get_str_len
-    mov rdx, rax
+    mov rcx, rax
     pop rsi
-    call print
-    call print_nl
+
+    lea r13, [rel b_filename]   ; PIE-compliant
+    mov rdi, r13
+    
+    ; rsi=source, rdi=destination
+    rep movsb
+    
+    ; --- Format ---
+    append_nl
+
+    mov rsi, r13
+    mov rdx, rdi
+    sub rdx, r13
+
+    call safe_append
+
+    pop r13
 
 .goto_next:
-    movzx rax, word [dir_buffer + r15 + 16]  ; rax = d_reclen
-    add r15, rax
+    movzx rdx, word [rel dir_buffer + r14 + D_RECLEN]
+    add r14, rdx
     jmp .parse_buffer
+
+
+
+close_and_exit:
+    ; --- Final Flush ---
+    lea rsi, [rel b_output]
+    mov rdx, r15
+    sub rdx, rsi
+    call print
+
+    ; --- Close FD ---
+    mov rdi, r12           ; The FD we got from SYS_OPEN
+
+    call io_close
+    jmp exit
 
 exit:
     xor rdi, rdi            ; exit code 0
     call io_exit
-
-close_and_exit:
-    mov rdi, r13           ; The FD we got from SYS_OPEN
-    call io_close
-    jmp exit
 
 error_open:
     ; TODO: print error message, unable to read directory
@@ -269,7 +324,7 @@ error_open:
     jmp exit
 
 error_read:
-    mov rdi, r13
+    mov rdi, r12
     call io_close
     mov rsi, e_read
     mov rdx, e_read_l
@@ -371,4 +426,66 @@ read_from_pipe:
     xor rax, rax
     ret
 
+; ---------------------------------------------------------
+; safe_append
+; Input:  rsi = source string
+;         rdx = length to copy
+; Global: r15 = Current Tail, b_output = Buffer Start
+; ---------------------------------------------------------
+safe_append:
+    push rbx
+    push rcx
+    push rdi
+
+    ; --- Does the string fit ---
+    ; subtract start from tail to get length
+    ; length = tail - start
+    lea rbx, [rel b_output] ; buffer start address
+    mov rax, r15            ; current tail
+    sub rax, rbx            ; bytes currently in buffer
+
+    mov rbx, rax
+    add rbx, rdx            ; add new string length to current bytes
+    cmp rbx, 2048           ; hard limit for this buffer
+    jb .do_copy
+
+    ; --- Flush ---
+    push rsi
+    push rdx
+    lea rsi, [rel b_output]
+    mov rdx, rax
+    call print
+    pop rdx
+    pop rsi
+
+    lea r15, [rel b_output] ; Reset pointer
+
+    cmp rdx, 2048   ; hard limit, long filename
+    jbe .do_copy
+
+.truncate:
+    mov rdx, 2048   ; cap for now. TODO: split in middle
+
+.do_copy:
+    mov rdi, r15    ; set data as current tail
+    mov rcx, rdx    ; sets rcx as length for loop
+    rep movsb       ; copy data to rsi, increment tail
+    mov r15, rdi    ; save new tail
+
+.cleanup:
+    pop rdi
+    pop rcx
+    pop rbx
+    ret
+
+;format_highlight:
+    ; Add Red
+
+    ; Add Filename
+
+    ; Add Reset
+
+    ; Add Slash
+
+    ; Add Newline
 

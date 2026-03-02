@@ -155,3 +155,19 @@ Standard `ls` is dynamically linked to `libc.so`. When you run it, the Linux loa
 3. **Register-Based**: We use the System V ABI to pass arguments directly in registers (`rdi`, `rsi`, `rdx`), resulting in zero stack-frame overhead for core I/O.
 
 
+## Benchmarks
+
+```bash
+$ hyperfine --warmup 5 "pk /usr/bin" "/bin/ls /usr/bin"
+Benchmark 1: pk /usr/bin
+  Time (mean ± σ):       3.4 ms ±   1.1 ms    [User: 1.3 ms, System: 2.2 ms]
+  Range (min … max):     0.0 ms …   4.3 ms    634 runs
+ 
+Benchmark 2: /bin/ls /usr/bin
+  Time (mean ± σ):       5.2 ms ±   2.6 ms    [User: 3.5 ms, System: 1.8 ms]
+  Range (min … max):     0.4 ms …   7.9 ms    1046 runs
+ 
+Summary
+  'pk /usr/bin' ran
+    1.55 ± 0.92 times faster than '/bin/ls /usr/bin'
+```

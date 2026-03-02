@@ -12,3 +12,4 @@ extern get_str_len
 extern print
 extern print_nl
 extern highlight
+extern format_highlight

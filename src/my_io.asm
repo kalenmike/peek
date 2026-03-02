@@ -1,4 +1,4 @@
-%include "include/syscalls.inc"
+%include "include/constants.inc"
 
 section .data
     nl db 0xA
@@ -196,4 +196,38 @@ highlight:
 
     pop r13
     pop r12
+    ret
+
+; ---------------------------------------------------------
+; format_highlight - wraps string in highlight codes
+;  Input: rdi = destination buffer
+;         rsi = pointer to data to write
+;         rdx = bytes to write
+; Output: rax = updated destination pointer
+; ---------------------------------------------------------
+global format_highlight
+format_highlight:
+    push rsi
+    push rcx
+
+    mov r8, rsi
+    mov r9, rdx
+
+    lea rsi, [color_red]        ; mov rsi, color_red
+    mov rcx, color_red_l
+    rep movsb                   ; Copies one byte from rsi to rdi then increments both. Repeats until rcx hits 0
+
+    mov rsi, r8
+    mov rcx, r9
+    rep movsb
+
+    lea rsi, [color_reset]
+    mov rcx, color_reset_l
+    rep movsb
+
+    mov rax, rdi        ; return the tail pointer
+
+    pop rcx
+    pop rsi
+
     ret
